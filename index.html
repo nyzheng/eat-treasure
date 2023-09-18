@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0418.t</title>
+    <style>
+        body {
+            top: 0;
+        }
+
+        #map {
+            width: 500px;
+            height: 500px;
+            position: relative;
+            background-color: #ccc;
+            margin: auto;
+
+        }
+
+        #player {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgb(22, 41, 83);
+        }
+
+        .treasure {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            background-color: brown;
+        }
+
+
+        /* 調整score在父元素中的佈局 */
+        #score {
+            margin-left: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div id="map-container">
+        <div id="map">
+            <div id="player"></div>
+            <div id="treasure-container">
+                <div class="treasure"></div>
+                <div class="treasure"></div>
+                <div class="treasure"></div>
+                <div class="treasure"></div>
+                <div class="treasure"></div>
+            </div>
+        </div>
+        <div id="score">Score: 0</div>
+    </div>
+    </div>
+
+
+
+
+    <script>
+
+        //地圖
+        let map = {
+            width: 500,
+            height: 500,
+            maxStep: 10,
+            stepPx: 50
+        }
+
+        //玩家
+        let player = {
+            x: 0,
+            y: 0
+        };
+
+        //玩家移動後位置
+        let nextMove = {
+            x: 0,
+            y: 0
+        }
+
+
+
+        //寶箱起始位置
+        let treasureList = [
+            {
+                x: 0,
+                y: 0,
+            },
+            {
+                x: 0,
+                y: 0,
+            },
+            {
+                x: 0,
+                y: 0,
+            },
+            {
+                x: 0,
+                y: 0,
+            },
+            {
+                x: 0,
+                y: 0,
+            },
+        ];
+
+
+
+        //起始分數
+        let score = 0
+
+
+        //player移動後位置
+        function playerMoveUp() {
+            nextMove.y -= map.stepPx;
+        }
+        function playerMoveDown() {
+            nextMove.y += map.stepPx;
+        }
+        function playerMoveLeft() {
+            nextMove.x -= map.stepPx;
+        }
+        function playerMoveRight() {
+            nextMove.x += map.stepPx;
+        }
+
+
+        //treasure隨機生成與位置
+        function treasureRandomPosition(treasure) {
+            treasure.x = Math.floor(Math.random() * map.maxStep) * map.stepPx;
+            treasure.y = Math.floor(Math.random() * map.maxStep) * map.stepPx;
+        }
+        function treasureListRandomPosition() {
+            for (let i = 0; i < treasureList.length; i++) {
+                treasureRandomPosition(treasureList[i]);
+            }
+        }
+
+
+        //吃到寶箱後加分
+        function updateScore() {
+            score++;
+            console.log(`分數${score}`);
+            document.getElementById('score').textContent = `Score: ${score}`;
+        }
+
+
+
+
+        //其他
+        //檢查玩家移動後碰到寶箱
+        function checkBump() {
+            for (let i = 0; i < treasureList.length; i++) {
+                if (treasureList[i].x === player.x && treasureList[i].y === player.y) {
+                    console.log('吃到寶箱', `第${i}個寶箱`);
+                    //加分
+                    updateScore();
+                    //把寶箱移到地圖外面，並隱藏
+                    treasureList[i].x = -100
+                    treasureList[i].y = -100
+
+                }
+            }
+        }
+
+        //隨機生成寶箱位置且不重疊(玩家、寶箱)
+        function treasureSpawn() {
+            let tempTreasureList = [];
+            for (let i = 0; i < treasureList.length; i++) {
+                //新生成寶箱位置
+                let x = Math.floor(Math.random() * map.maxStep) * map.stepPx;
+                let y = Math.floor(Math.random() * map.maxStep) * map.stepPx;
+
+                console.log("x: " + x + "y: " + y);
+
+                 // 確認寶箱是否與玩家重複
+                if (x === player.x &&
+                    y === player.y) {
+                    console.log('玩家重疊');
+
+                    i--;
+                    continue;
+                }
+
+                //設定寶箱isBump狀態為false
+
+                 //確認寶箱是否與其他寶箱重複
+                let isBump = false;
+                for (let j = 0; j < tempTreasureList.length; j++) {
+                    if (tempTreasureList[j].x === x &&
+                        tempTreasureList[j].y === y) {
+                        console.log('寶箱重疊');
+                        isBump = true;
+                        break;
+                    }
+                }
+
+                //如果重複就跳回去重做
+                if (isBump) {
+                    i--;
+                    continue;
+                }
+
+                
+                let randomPosition = {
+                    x,
+                    y
+                }
+                tempTreasureList.push(randomPosition);
+                console.log(tempTreasureList);
+            }
+
+
+            console.log(tempTreasureList);
+            treasureList = tempTreasureList;
+        }
+
+
+
+
+        //檢測是否碰到牆壁，如果碰到則移動到另一端
+        treasureSpawn();
+        function checkWall() {
+            if (nextMove.y === -50) {
+                nextMove.y = 450
+            }
+            if (nextMove.y === 500) {
+                nextMove.y = 0
+            }
+            if (nextMove.x === -50) {
+                nextMove.x = 450
+            }
+            if (nextMove.x === 500) {
+                nextMove.x = 0
+            }
+        }
+
+        //將移動後位置賦值到原位置
+        function go() {
+            player = nextMove
+            console.log(player);
+        }
+
+        //判斷按下按鍵後移動的方向並執行
+        function control() {
+            if (event.key === 'ArrowUp') {
+                playerMoveUp()
+            }
+            if (event.key === 'ArrowDown') {
+                playerMoveDown()
+            }
+            if (event.key === 'ArrowLeft') {
+                playerMoveLeft()
+            }
+            if (event.key === 'ArrowRight') {
+                playerMoveRight()
+            }
+        }
+
+        //檢查是否所有寶箱都已經被取走，如果是的話就重新生成寶箱
+        function checkTreasureTaken() {
+            let treasureAllTaken = true;
+            //檢查每個i, 如果false跳回去
+            for (let i = 0; i < treasureList.length; i++) {
+                if (treasureList[i].x !== -100) {
+                    treasureAllTaken = false;
+                    break;
+                }
+            }
+            //檢查每個i, 如果true就重新生成
+            if (treasureAllTaken) {
+                treasureSpawn();
+            }
+        }
+        ///////////////////////////////////////////////////////////////////////
+
+        function setPlayer() {
+            let elPlayer = document.getElementById('player')
+            elPlayer.style.left = `${player.x}px`
+            elPlayer.style.top = `${player.y}px`
+        }
+
+
+        function setTreasure() {
+            let eltreasure = document.getElementsByClassName('treasure');
+            for (let i = 0; i < treasureList.length; i++) {
+                treasure = eltreasure[i];
+                treasure.style.left = `${treasureList[i].x}px`
+                treasure.style.top = `${treasureList[i].y}px`
+            }
+        }
+        setTreasure()
+        ///////////////////////////////////////////////////////////////////////////
+
+
+        //每一次移動所要執行的function
+        function move(event) {
+            control()
+            checkWall()
+            go()
+            checkBump()
+            checkTreasureTaken()
+            setPlayer()
+            setTreasure()
+        }
+
+        //監聽按鍵
+        document.addEventListener('keydown', move);
+
+    </script>
+
+</body>
+
+</html>
